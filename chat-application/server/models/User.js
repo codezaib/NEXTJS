@@ -40,20 +40,24 @@ User.pre("save", async function () {
 
 User.methods.createJWT = function () {
   return jwt.sign(
-    { user_id: this._id, name: this.name, phone: this.name },
+    {
+      user_id: this._id,
+      name: this.name,
+      phone: this.phone,
+      friendsList: this.friendsList,
+    },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_LIFETIME }
   );
 };
-User.methods.attachCookiesToResponse = function (res) {
-  const token = this.createJWT();
+User.methods.attachCookiesToResponse = function (res, token) {
   const oneDay = 1000 * 60 * 60 * 24;
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     maxAge: oneDay,
     sameSite: "lax",
-    // signed: true,
+    signed: false,
   });
 };
 User.methods.comparePassword = async function (candidatePassword) {

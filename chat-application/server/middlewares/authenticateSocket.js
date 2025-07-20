@@ -12,9 +12,11 @@ export const authenticationSocket = (socket, next) => {
       userId: payload.user_id,
       name: payload.name,
       phone: payload.phone,
+      friendsList: payload.friendsList,
     };
     next();
   } catch (error) {
+    console.error("JWT verification failed:", error);
     return next(new Error("Authentication invalid"));
   }
 };

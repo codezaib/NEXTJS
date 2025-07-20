@@ -11,6 +11,7 @@ export const authentication = (req, res, next) => {
       userId: payload.user_id,
       name: payload.name,
       phone: payload.phone,
+      friendsList: payload.friendsList,
     };
     next();
   } catch (error) {

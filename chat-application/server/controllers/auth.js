@@ -25,7 +25,8 @@ export const login = async (req, res) => {
   if (!isPasswordCorrect) {
     throw new BadRequest("Invalid credentials");
   }
-  user.attachCookiesToResponse(res);
+  const token = user.createJWT();
+  user.attachCookiesToResponse(res, token);
   user.password = undefined;
   res.status(StatusCodes.OK).json({ data: user, success: true });
 };

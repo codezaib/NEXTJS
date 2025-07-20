@@ -13,14 +13,14 @@ import userRouter from "./server/routes/user.js";
 import authRouter from "./server/routes/auth.js";
 import { Server } from "socket.io";
 import { authenticationSocket } from "./server/middlewares/authenticateSocket.js";
-import { chat } from "./server/sockets/messages.js";
+import { chat, getMessages } from "./server/sockets/messages.js";
 const port = process.env.PORT || 4000;
 const dev = process.env.NODE_ENV !== "production";
 const app = express();
 
 app.use(
   cors({
-    origin: "*",
+    origin: "http://localhost:3000",
     credentials: true,
   })
 );
@@ -48,7 +48,9 @@ const server = app.listen(port, async () => {
 
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -66,11 +68,11 @@ io.of("/demo").on("connection", (socket) => {
 });
 
 const chatNsp = io.of("/chat");
-
+const chatSp = io.of("/messages");
 chatNsp.use(authenticationSocket);
-
+chatSp.use(authenticationSocket);
 chatNsp.on("connection", chat(chatNsp));
-
+chatSp.on("connection", getMessages(chatSp));
 //?For production
 // const nextApp = next({ dev }); // ✅ no extra options
 // const handle = nextApp.getRequestHandler();
