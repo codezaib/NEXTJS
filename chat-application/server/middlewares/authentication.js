@@ -15,6 +15,7 @@ export const authentication = (req, res, next) => {
     };
     next();
   } catch (error) {
+    console.log(error);
     throw new UnAuthenticatedError("Authentication invalid");
   }
 };

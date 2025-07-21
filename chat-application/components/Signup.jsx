@@ -1,8 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 import React from "react";
 import { useForm } from "react-hook-form";
-
-const Signup = ({ setSection }) => {
+import { setUser } from "@/features/User";
+import Link from "next/link";
+import axios from "axios";
+const Signup = () => {
   const {
     register,
     formState: { errors },
@@ -10,10 +12,15 @@ const Signup = ({ setSection }) => {
   } = useForm();
   const { mutate, isSuccess, isError } = useMutation({
     mutationFn: async (data) => {
-      const { data: response } = await axios.post("/api/auth/login", {
-        ...data,
-      });
-      if (!response) toast.error("Login failed. Please try again.");
+      console.log("hello occured");
+      const { data: response } = await axios.post(
+        "http://localhost:4000/api/v1/auth/register",
+        {
+          ...data,
+        },
+        { withCredentials: true }
+      );
+      if (!response) toast.error("Please try again.");
       return response.data;
     },
     onSuccess: (data) => {
@@ -29,6 +36,9 @@ const Signup = ({ setSection }) => {
     },
   });
   const submitForm = (data) => {
+    if (!data.phone.includes(" ")) {
+      data.phone = data.phone.slice(0, 4) + " " + data.phone.slice(4);
+    }
     mutate(data);
   };
   return (
@@ -64,6 +74,15 @@ const Signup = ({ setSection }) => {
             message: "Invalid phone number",
           },
         })}
+        type="text"
+        placeholder="phone No. eg 0309 9238934"
+        className="border rounded-lg p-2 mb-3"
+      />
+      <input
+        {...register("password", {
+          required: "password is required",
+          minLength: { value: 6, message: "password must be of 6 characters" },
+        })}
         type="password"
         placeholder="Password"
         className="border rounded-lg p-2 mb-3"
@@ -75,12 +94,9 @@ const Signup = ({ setSection }) => {
       >
         Sign Up
       </button>
-      <button
-        onClick={() => setSection("welcome")}
-        className="mt-4 text-blue-500 text-sm underline"
-      >
+      <Link href={"/"} className="mt-4 text-blue-500 text-sm underline">
         Back to Welcome
-      </button>
+      </Link>
     </form>
   );
 };

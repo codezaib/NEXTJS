@@ -3,8 +3,11 @@ import axios from "axios";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
-
-const Login = ({ setSection, setUser }) => {
+import { setUser } from "@/features/User";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+const Login = () => {
+  const router = useRouter();
   const {
     register,
     formState: { errors },
@@ -26,7 +29,6 @@ const Login = ({ setSection, setUser }) => {
       if (data) {
         toast.success("Login successful!");
         setUser(data);
-        setSection("home");
       }
     },
     onError: (error) => {
@@ -80,12 +82,9 @@ const Login = ({ setSection, setUser }) => {
       >
         Login
       </button>
-      <button
-        onClick={() => setSection("welcome")}
-        className="mt-4 text-blue-500 text-sm underline"
-      >
+      <Link href={"/"} className="mt-4 text-blue-500 text-sm underline">
         Back to Welcome
-      </button>
+      </Link>
     </form>
   );
 };

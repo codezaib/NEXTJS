@@ -3,28 +3,34 @@ import { ArrowLeft, Send } from "lucide-react";
 import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
 import { useForm } from "react-hook-form";
+import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
 
 let socket; // ✅ global per component
 
-const Chat = ({ selectedFriend, setSection }) => {
+const Chat = () => {
   const { register, handleSubmit, reset } = useForm();
   const { chats } = useSelector((state) => state.chats);
-  const [messages, setMessages] = useState(chats[selectedFriend?._id] || []);
+  const { id } = useParams();
+  const [messages, setMessages] = useState(chats[id] || []);
+  const searchParams = useSearchParams();
 
+  const name = searchParams.get("name");
+  const fromHome = searchParams.get("fromHome");
   useEffect(() => {
-    if (!selectedFriend) return;
+    if (!id) return;
 
     socket = io(`ws://localhost:4000/chat`, {
       transports: ["websocket"],
     });
 
     socket.on("connect", () => {
-      console.log("Connected to socket for:", selectedFriend.name);
+      console.log("Connected to socket for:", name);
     });
 
     socket.on("receiveMessage", (message) => {
       socket.on("receiveMessage", (message) => {
-        if (String(message.senderId) !== String(selectedFriend._id)) return;
+        if (String(message.senderId) !== String(id)) return;
         setMessages((prev) => [
           ...prev,
           {
@@ -39,13 +45,13 @@ const Chat = ({ selectedFriend, setSection }) => {
       socket.off("receiveMessage");
       socket.disconnect(); // ✅ clean up when leaving chat
     };
-  }, [selectedFriend]);
+  }, [id]);
 
   const handleSend = (data) => {
     if (!data.message.trim()) return;
 
     socket.emit("sendMessage", {
-      receiverId: selectedFriend._id,
+      receiverId: id,
       content: data.message,
     });
 
@@ -56,15 +62,10 @@ const Chat = ({ selectedFriend, setSection }) => {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center mb-2">
-        <ArrowLeft
-          className="cursor-pointer"
-          onClick={() =>
-            selectedFriend ? setSection("home") : setSection("welcome")
-          }
-        />
-        <h2 className="text-lg font-bold text-center flex-1">
-          {selectedFriend ? selectedFriend.name : "Server Chat (Demo)"}
-        </h2>
+        <Link href={fromHome ? "/home" : "/"}>
+          <ArrowLeft className="cursor-pointer" />
+        </Link>
+        <h2 className="text-lg font-bold text-center flex-1">{name}</h2>
       </div>
 
       <div className="flex-1 overflow-auto p-2 space-y-2">

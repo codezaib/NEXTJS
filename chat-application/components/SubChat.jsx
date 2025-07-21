@@ -16,44 +16,13 @@ function stringToColor(str) {
   return color;
 }
 
-const SubChat = ({ friend, setSelectedFriend, setSection }) => {
-  const dispatch = useDispatch();
+const SubChat = ({ friend, user }) => {
   const { chats } = useSelector((state) => state.chats);
-  useEffect(() => {
-    const socket = io(`ws://localhost:4000/messages`, {
-      transports: ["websocket"],
-      query: {
-        receiveId: friend._id,
-      },
-    });
-    socket.on("connect", () => {
-      console.log("Connected to socket server for friend:", friend.name);
-    });
-    socket.on("displayMessages", (messages) => {
-      console.log("Received message:", messages);
-      const parsedMessages = messages.map((msg) => ({
-        text: msg.content,
-        from: String(msg.senderId) === String(friend._id) ? "friend" : "me",
-      }));
-      dispatch(
-        setChat({
-          friendId: friend._id,
-          messages: parsedMessages,
-        })
-      );
-    });
-    return () => {
-      socket.disconnect();
-    };
-  }, [friend, setSection]);
+  console.log(user);
   return (
     <div
       key={friend._id}
       className="flex items-center gap-3 p-2 border rounded-lg cursor-pointer hover:bg-gray-100"
-      onClick={() => {
-        setSelectedFriend(friend);
-        setSection("chat");
-      }}
     >
       {/* Avatar Placeholder */}
       <div
@@ -66,7 +35,9 @@ const SubChat = ({ friend, setSelectedFriend, setSection }) => {
       </div>
 
       <div className="flex flex-col">
-        <span className="font-medium text-gray-800">{friend.name}</span>
+        <span className="font-medium text-gray-800">
+          {user?.friendsList.includes(friend._id) ? friend.name : friend.phone}
+        </span>
         {chats?.[friend._id]?.length > 0 && (
           <p className="text-sm text-gray-400 flex gap-0.5 items-center">
             {chats[friend._id] &&

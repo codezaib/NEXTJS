@@ -11,7 +11,6 @@ const User = new Schema({
   },
   email: {
     type: String,
-    unique: true,
     match: [/^[a-zA-Z0-9.+*-]+@gmail\.com$/, "Invalid email fromat"],
   },
   password: {

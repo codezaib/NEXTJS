@@ -3,13 +3,18 @@ import User from "../models/User.js";
 import BadRequest from "../errors/badRequest.js";
 
 export const register = async (req, res) => {
-  const user = await User.create({ ...req.body });
-  if (!user) {
-    throw new BadRequest("User registration failed");
+  try {
+    const user = await User.create({ ...req.body });
+    if (!user) {
+      throw new BadRequest("User registration failed");
+    }
+    const token = user.createJWT();
+    user.attachCookiesToResponse(res, token);
+    user.password = undefined;
+    res.status(StatusCodes.CREATED).json({ data: user, success: true });
+  } catch (error) {
+    console.log(error);
   }
-  user.attachCookiesToResponse(res);
-  user.password = undefined;
-  res.status(StatusCodes.CREATED).json({ data: user, success: true });
 };
 
 export const login = async (req, res) => {

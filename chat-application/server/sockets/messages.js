@@ -14,30 +14,39 @@ export const getMessages = (chatSp) => {
     const receiveId = socket.handshake.query.receiveId;
     const userId = socket.user.userId;
     const userMessages = await redisClient.lRange(`messages:${userId}`, 0, -1);
-    const parsedUserMessages = userMessages
-      .map((msg) => JSON.parse(msg))
-      .filter((msg) => msg.senderId === receiveId)
-      .map((msg) => {
-        if (!msg.seen) msg.seen = true;
-        return msg;
-      });
-    const receiverMessages = await redisClient.lRange(
-      `messages:${receiveId}`,
-      0,
-      -1
-    );
-    const parsedReceiverMessages = receiverMessages
-      .map((msg) => JSON.parse(msg))
-      .filter((msg) => msg.senderId === userId)
-      .map((msg) => {
-        if (!msg.seen) msg.seen = true;
-        return msg;
-      });
-    const allMessages = [...parsedUserMessages, ...parsedReceiverMessages].sort(
-      (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-    );
+    if (receiveId) {
+      const parsedUserMessages = userMessages
+        .map((msg) => JSON.parse(msg))
+        .filter((msg) => msg.senderId === receiveId)
+        .map((msg) => {
+          if (!msg.seen) msg.seen = true;
+          return msg;
+        });
+      const receiverMessages = await redisClient.lRange(
+        `messages:${receiveId}`,
+        0,
+        -1
+      );
+      const parsedReceiverMessages = receiverMessages
+        .map((msg) => JSON.parse(msg))
+        .filter((msg) => msg.senderId === userId)
+        .map((msg) => {
+          if (!msg.seen) msg.seen = true;
+          return msg;
+        });
+      const allMessages = [
+        ...parsedUserMessages,
+        ...parsedReceiverMessages,
+      ].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-    socket.emit("displayMessages", allMessages);
+      socket.emit("displayMessages", allMessages);
+    } else {
+      const parsedMessages = userMessages
+        .map((msg) => JSON.parse(msg))
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      // console.log(parsedMessages);
+      socket.emit("displayMessages", parsedMessages);
+    }
   };
 };
 
@@ -70,8 +79,9 @@ export const chat = (chatNsp) => {
       if (!receiverId) {
         throw new BadRequest("Receiver ID is required");
       }
-      const isFriend = socket.user.friendsList?.includes(receiverId);
+
       const isReceiverOnline = chatNsp.adapter.rooms.has(receiverId);
+
       const message = {
         receiverId,
         content,
@@ -79,24 +89,21 @@ export const chat = (chatNsp) => {
         seen: false,
         timestamp: new Date().toISOString(),
       };
-      if (isReceiverOnline && isFriend) {
+
+      // ✅ If the receiver is online, send immediately
+      if (isReceiverOnline) {
         message.seen = true;
         chatNsp.to(receiverId).emit("receiveMessage", {
           content,
           senderId: userId,
         });
-        await redisClient.rPush(
-          `messages:${receiverId}`,
-          JSON.stringify(message)
-        );
-      } else if (isFriend) {
-        await redisClient.rPush(
-          `messages:${receiverId}`,
-          JSON.stringify(message)
-        );
-      } else {
-        throw new BadRequest("You can only send messages to your friends");
       }
+
+      // ✅ Always store in Redis (whether online or not)
+      await redisClient.rPush(
+        `messages:${receiverId}`,
+        JSON.stringify(message)
+      );
     });
   };
 };
